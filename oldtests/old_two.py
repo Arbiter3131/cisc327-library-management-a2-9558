@@ -4,7 +4,7 @@ from database import (
     update_book_availability,
     get_patron_borrow_count
 )
-from library_service import (
+from services.library_service import (
     borrow_book_by_patron,
 )
 
