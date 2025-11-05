@@ -14,8 +14,10 @@ from services.payment_service import PaymentGateway
 # test for pay late fees
 
 @patch("services.library_service.calculate_late_fee_for_book")
-def test_pay_late_fees_success(mock_calc_fee):
+@patch("services.library_service.get_book_by_id")
+def test_pay_late_fees_success(mock_calc_fee, mock_get_book):
     mock_calc_fee.return_value = {"fee_amount": 5.0}
+    mock_get_book.return_value = {"title": "book"}
 
     mock_gateway = Mock(spec=PaymentGateway)
     
@@ -30,8 +32,10 @@ def test_pay_late_fees_success(mock_calc_fee):
 # pay late fees no fee
 
 @patch("services.library_service.calculate_late_fee_for_book")
-def test_pay_late_fees_no_fee(mock_calc_fee):
+@patch("services.library_service.get_book_by_id")
+def test_pay_late_fees_no_fee(mock_calc_fee, mock_get_book):
     mock_calc_fee.return_value = {"fee_amount": 0.0}
+    mock_get_book.return_value = {"title": "book"}
 
     mock_gateway = Mock(spec=PaymentGateway)
     
@@ -48,8 +52,10 @@ def test_pay_late_fees_no_fee(mock_calc_fee):
 # pay late fees with invalid transaction id
 
 @patch("services.library_service.calculate_late_fee_for_book")
-def test_pay_late_fees_no_fee(mock_calc_fee):
+@patch("services.library_service.get_book_by_id")
+def test_pay_late_fees_no_fee(mock_calc_fee, mock_get_book):
     mock_calc_fee.return_value = {"fee_amount": 0.0}
+    mock_get_book.return_value = {"title": "book"}
 
     mock_gateway = Mock(spec=PaymentGateway)
     
