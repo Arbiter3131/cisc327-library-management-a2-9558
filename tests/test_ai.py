@@ -30,6 +30,10 @@ def test_add_book_invalid_fields():
     success, msg = add_book_to_catalog("Test", "Author", "123", 1)
     assert not success and "13 digits" in msg
 
+    # no title provided
+    success, msg = add_book_to_catalog("", "Author", "123", 1)
+    assert not success and "Title is required." in msg
+
     # Negative copies
     success, msg = add_book_to_catalog("Test", "Author", "1234567890123", -1)
     assert not success and "positive integer" in msg
@@ -41,6 +45,10 @@ def test_add_book_invalid_fields():
     # Empty author
     success, msg = add_book_to_catalog("Test", "   ", "1234567890123", 1)
     assert not success and "Author is required" in msg
+
+    # author too long
+    success, msg = add_book_to_catalog("Test", "a" * 101, "1234567890123", 1)
+    assert not success and "Author must be less than 100 characters" in msg
 
 
 ### ---------- R3: Borrow Book ---------- ###
@@ -57,7 +65,7 @@ def test_borrow_book_success(mock_update, mock_insert, mock_count, mock_get_book
 
 def test_borrow_book_invalid_patron_id():
     success, msg = borrow_book_by_patron("12A456", 1)
-    assert not success and "Invalid patron ID" in msg
+    assert not success and "Invalid patron ID. Must be exactly 6 digits." in msg
 
 @patch('services.library_service.get_book_by_id', return_value=None)
 def test_borrow_book_nonexistent(mock_get_book):
@@ -97,6 +105,11 @@ def test_return_book_invalid_book(mock_get_book):
     success, msg = return_book_by_patron("123456", 1)
     assert not success and "Book not found" in msg
 
+@patch('services.library_service.get_book_by_id', return_value=None)
+def test_return_book_invalid_patron(mock_get_book):
+    success, msg = return_book_by_patron("12345A", 1)
+    assert not success and "Invalid patron ID. Must be exactly 6 digits." in msg
+
 @patch('services.library_service.get_book_by_id', return_value={'title': 'Test'})
 @patch('services.library_service.get_patron_borrowed_books', return_value=[{'book_id': 2}])
 def test_return_book_not_borrowed(mock_get_borrowed, mock_get_book):
@@ -124,6 +137,22 @@ def test_late_fee_not_overdue(mock_get_borrowed, mock_get_book):
     result = calculate_late_fee_for_book("123456", 1)
     assert result["status"] == "Not Overdue"
     assert result["fee_amount"] == 0.00
+
+@patch('services.library_service.get_book_by_id', return_value={'title': 'Test'})
+@patch('services.library_service.get_patron_borrowed_books')
+def test_late_fee_invalid_patron(mock_get_borrowed, mock_get_book):
+    borrow_date = datetime.now() - timedelta(days=10)
+    mock_get_borrowed.return_value = [{'book_id': 1, 'borrow_date': borrow_date}]
+    result = calculate_late_fee_for_book("12345A", 1)
+    assert result == None
+
+@patch('services.library_service.get_book_by_id', return_value={})
+@patch('services.library_service.get_patron_borrowed_books')
+def test_late_fee_invalid_book(mock_get_borrowed, mock_get_book):
+    borrow_date = datetime.now() - timedelta(days=10)
+    mock_get_borrowed.return_value = []
+    result = calculate_late_fee_for_book("123456", None)
+    assert result == None
 
 
 ### ---------- R6: Search Function ---------- ###
